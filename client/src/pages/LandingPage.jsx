@@ -8,7 +8,9 @@ const IMAGES = {
   hero: "/assets/hero.jpg",
   about: "/assets/about.jpg",
   concern: "/assets/concern.jpg",
-  gallery: ["/assets/gallery-1.jpg", "/assets/gallery-2.jpg", "/assets/gallery-3.jpg"],
+  galleryJapan: ["/assets/gallery-1.jpg", "/assets/gallery-2.jpg", "/assets/gallery-3.jpg"],
+  galleryMusic: "/assets/gallery-music.png",
+  gallerySports: "/assets/gallery-sports.png",
   creds: ["/assets/cred-1.jpg", "/assets/cred-2.jpg"],
 };
 
@@ -134,12 +136,66 @@ export default function LandingPage() {
           <div className="sec-head reveal in">
             <span className="eyebrow">En acción</span>
             <h2>Aprendizaje real, en ambientes preparados</h2>
-            <p>Momentos de trabajo, concentración y vida práctica junto a los niños y sus familias.</p>
+            <p>Momentos de trabajo, concentración y vida práctica junto a niños, familias y guías en distintos contextos.</p>
           </div>
-          <div className="gallery reveal in">
-            <div className="framed tall"><img src={IMAGES.gallery[0]} alt="Galería 1" loading="lazy" /></div>
-            <div className="framed"><img src={IMAGES.gallery[1]} alt="Galería 2" loading="lazy" /></div>
-            <div className="framed"><img src={IMAGES.gallery[2]} alt="Galería 3" loading="lazy" /></div>
+
+          <div className="gallery-block reveal in">
+            <div className="gallery-story">
+              <span className="eyebrow">Experiencia en Japón</span>
+              <h3>Ambientes Montessori y una mirada que cruza culturas</h3>
+              <p>
+                Viví y trabajé en Japón en ambientes Montessori 0–3, junto a guías AMI y equipos educativos japoneses.
+                Observé cómo los niños crecen en espacios ordenados, serenos y profundamente respetuosos de su ritmo.
+              </p>
+              <p>
+                Esa experiencia sumó a mi formación la disciplina como autoregulación, la atención al detalle en el ambiente,
+                la paciencia en la observación y el valor del trabajo bien hecho — principios que comparten Montessori y la
+                enseñanza japonesa, y que hoy integro al acompañamiento de las familias en línea.
+              </p>
+            </div>
+            <div className="gallery gallery-japan">
+              <div className="framed tall">
+                <img src={IMAGES.galleryJapan[0]} alt="Niños en ambiente Montessori en Japón" loading="lazy" />
+              </div>
+              <div className="framed">
+                <img src={IMAGES.galleryJapan[1]} alt="Guías Montessori en Japón" loading="lazy" />
+              </div>
+              <div className="framed">
+                <img src={IMAGES.galleryJapan[2]} alt="Maestras y niños en Japón" loading="lazy" />
+              </div>
+            </div>
+          </div>
+
+          <div className="gallery-features reveal in">
+            <article className="gallery-feature">
+              <div className="framed gallery-feature-photo">
+                <img src={IMAGES.galleryMusic} alt="Niña explorando el piano en casa" loading="lazy" />
+              </div>
+              <div className="gallery-feature-text">
+                <span className="eyebrow">Montessori y música</span>
+                <h3>Concentración, coordinación y expresión</h3>
+                <p>
+                  La música no es solo una actividad extra: en Montessori es una vía para desarrollar atención, motricidad fina,
+                  lenguaje y expresión emocional. Acompaño a las familias a ofrecer experiencias musicales accesibles en casa —
+                  con instrumentos reales, ritmo sin presión y la libertad de explorar dentro de límites claros y respetuosos.
+                </p>
+              </div>
+            </article>
+
+            <article className="gallery-feature gallery-feature--reverse">
+              <div className="framed gallery-feature-photo">
+                <img src={IMAGES.gallerySports} alt="Niño nadando con acompañamiento respetuoso" loading="lazy" />
+              </div>
+              <div className="gallery-feature-text">
+                <span className="eyebrow">Montessori y deporte</span>
+                <h3>Movimiento, confianza y autonomía</h3>
+                <p>
+                  El movimiento fortalece el cuerpo, la confianza y la autonomía del niño. Desde la mirada Montessori, nadar,
+                  correr o explorar el agua son oportunidades para que conozca sus límites, practique persistencia y viva la
+                  alegría de moverse con seguridad — siempre respetando su ritmo y sin forzar logros prematuros.
+                </p>
+              </div>
+            </article>
           </div>
         </div>
       </section>
