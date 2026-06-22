@@ -45,6 +45,8 @@ export const api = {
   getSessionNote: (id) => request(`/session-notes/${id}`),
   getContent: () => request("/content/services"),
   adminStats: () => request("/admin/stats"),
+  adminRevenue: () => request("/admin/revenue"),
+  adminWeekAgenda: (start) => request(`/admin/agenda/week${start ? `?start=${start}` : ""}`),
   adminAppointments: (status) => request(`/admin/appointments${status ? `?status=${status}` : ""}`),
   adminUpdateAppointment: (id, body) => request(`/admin/appointments/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   adminAvailability: () => request("/admin/availability"),
@@ -56,4 +58,6 @@ export const api = {
   adminSaveNote: (body) => request("/admin/session-notes", { method: "POST", body: JSON.stringify(body) }),
   stripeConfig: () => request("/stripe/config"),
   stripeCheckout: (packageId) => request("/stripe/checkout", { method: "POST", body: JSON.stringify({ packageId }) }),
+  bookingCheckout: (body) => request("/stripe/booking-checkout", { method: "POST", body: JSON.stringify(body) }),
+  bookingStatus: (sessionId) => request(`/stripe/booking-status?session_id=${encodeURIComponent(sessionId)}`),
 };

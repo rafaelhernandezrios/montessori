@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     adminNotes: { type: String, default: "" },
     sessionCredits: { type: Number, default: 0 },
+    activePlan: {
+      type: String,
+      enum: ["none", "single", "pack4", "accompany", "membership"],
+      default: "none",
+    },
+    planRenewsAt: { type: Date },
   },
   { timestamps: true }
 );

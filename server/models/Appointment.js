@@ -13,6 +13,8 @@ const appointmentSchema = new mongoose.Schema(
     meetingLink: { type: String, default: "" },
     adminNotes: { type: String, default: "" },
     userNotes: { type: String, default: "" },
+    paymentPlan: { type: String, default: "" },
+    paidWithCredit: { type: Boolean, default: false },
     cancelledAt: { type: Date },
     cancelReason: { type: String, default: "" },
   },

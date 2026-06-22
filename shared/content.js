@@ -42,3 +42,51 @@ export const sessionNoteTemplates = [
 ];
 
 export const appointmentStatuses = ["solicitada", "confirmada", "completada", "cancelada", "reprogramada"];
+
+/** Planes de reserva / pago (montos en centavos MXN para Stripe) */
+export const bookingPlans = [
+  {
+    id: "credit",
+    name: "Usar mi crédito",
+    mode: "1 sesión de tu paquete",
+    priceLabel: "Gratis",
+    amountCents: 0,
+    usesCredit: true,
+  },
+  {
+    id: "single",
+    name: "Sesión única",
+    mode: "Pago único",
+    priceLabel: "$850",
+    amountCents: 85000,
+    stripePackage: "single",
+    credits: 1,
+  },
+  {
+    id: "pack4",
+    name: "Paquete de 4",
+    mode: "3 MSI disponibles",
+    priceLabel: "$2,990",
+    amountCents: 299000,
+    stripePackage: "pack4",
+    credits: 4,
+  },
+  {
+    id: "request",
+    name: "Solicitar sin pago en línea",
+    mode: "Adriana confirma por correo",
+    priceLabel: "—",
+    amountCents: 0,
+    requestOnly: true,
+  },
+];
+
+export const planLabels = {
+  none: "Sin plan",
+  single: "Sesión única",
+  pack4: "Paquete 4 sesiones",
+  accompany: "Acompañamiento",
+  membership: "Membresía",
+  credit: "Crédito",
+  request: "Solicitud",
+};

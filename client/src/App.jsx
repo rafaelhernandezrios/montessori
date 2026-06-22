@@ -18,6 +18,8 @@ import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminAppointmentsPage from "./pages/admin/AdminAppointmentsPage";
 import AdminAgendaPage from "./pages/admin/AdminAgendaPage";
 import AdminFamiliesPage from "./pages/admin/AdminFamiliesPage";
+import AdminFamilyDetailPage from "./pages/admin/AdminFamilyDetailPage";
+import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 
 export default function App() {
   return (
@@ -45,6 +47,8 @@ export default function App() {
             <Route path="citas" element={<AdminAppointmentsPage />} />
             <Route path="agenda" element={<AdminAgendaPage />} />
             <Route path="familias" element={<AdminFamiliesPage />} />
+            <Route path="familias/:id" element={<AdminFamilyDetailPage />} />
+            <Route path="ingresos" element={<AdminPaymentsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

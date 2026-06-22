@@ -5,9 +5,8 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 import {
   combineDateAndTime,
   formatAppointmentDate,
+  getAvailableDaysForMonth,
   getAvailableSlotsForDate,
-  getBookedSlotsForMonth,
-  getOrCreateAvailability,
   parseDateKey,
 } from "../utils/availability.js";
 import {
@@ -25,21 +24,12 @@ router.get("/availability", authMiddleware, async (req, res) => {
     if (!year || !month) {
       return res.status(400).json({ message: "year y month son requeridos" });
     }
-    const availability = await getOrCreateAvailability();
-    const booked = await getBookedSlotsForMonth(year, month);
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const availableDays = {};
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const slots = await getAvailableSlotsForDate(dateKey);
-      if (slots.length) availableDays[dateKey] = slots;
-    }
+    const { availableDays, booked, blockedDates } = await getAvailableDaysForMonth(year, month);
 
     res.json({
       availableDays,
       booked,
-      blockedDates: availability.blockedDates,
+      blockedDates,
     });
   } catch (error) {
     console.error(error);
@@ -49,7 +39,7 @@ router.get("/availability", authMiddleware, async (req, res) => {
 
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { dateKey, time, serviceType, userNotes } = req.body;
+    const { dateKey, time, serviceType, userNotes, paymentPlan } = req.body;
     if (!dateKey || !time || !serviceType) {
       return res.status(400).json({ message: "Faltan campos requeridos" });
     }
@@ -58,16 +48,28 @@ router.post("/", authMiddleware, async (req, res) => {
       return res.status(409).json({ message: "Ese horario ya no está disponible" });
     }
     const scheduledAt = combineDateAndTime(dateKey, time);
+    const user = await User.findById(req.userId);
+
+    const useCredit = paymentPlan === "credit";
+    if (useCredit) {
+      if ((user.sessionCredits || 0) < 1) {
+        return res.status(400).json({ message: "No tienes créditos disponibles" });
+      }
+      user.sessionCredits -= 1;
+      await user.save();
+    }
+
     const appointment = await Appointment.create({
       userId: req.userId,
       scheduledAt,
       serviceType,
       userNotes: userNotes || "",
       status: "solicitada",
+      paymentPlan: paymentPlan || "request",
+      paidWithCredit: useCredit,
     });
-    const user = await User.findById(req.userId);
     await sendAppointmentRequestedEmail(user.email, user.name, formatAppointmentDate(scheduledAt), serviceType);
-    res.status(201).json({ appointment });
+    res.status(201).json({ appointment, creditsRemaining: user.sessionCredits });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al crear cita" });

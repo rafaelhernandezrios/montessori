@@ -4,12 +4,16 @@ import Appointment from "../models/Appointment.js";
 import ChildProfile from "../models/ChildProfile.js";
 import SessionNote from "../models/SessionNote.js";
 import User from "../models/User.js";
+import Payment from "../models/Payment.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { adminMiddleware } from "../middleware/adminMiddleware.js";
 import {
   formatAppointmentDate,
   getOrCreateAvailability,
+  parseDateKey,
 } from "../utils/availability.js";
+import { getRevenueStats, childAgeLabel, daysSince } from "../utils/revenue.js";
+import { planLabels } from "../../shared/content.js";
 import {
   sendAppointmentConfirmedEmail,
   sendSessionNotePublishedEmail,
@@ -52,6 +56,8 @@ router.get("/stats", async (_req, res) => {
     { $limit: 5 },
   ]);
 
+  const revenue = await getRevenueStats();
+
   res.json({
     stats: {
       pending,
@@ -61,7 +67,76 @@ router.get("/stats", async (_req, res) => {
       totalAppointments,
       cancelRate: totalAppointments ? Math.round((cancelled / totalAppointments) * 100) : 0,
       topServices: serviceStats,
+      monthRevenue: revenue.monthRevenue,
+      monthGrowth: revenue.monthGrowth,
     },
+  });
+});
+
+router.get("/revenue", async (_req, res) => {
+  const revenue = await getRevenueStats();
+  const recent = await Payment.find({ status: "completed" })
+    .populate("userId", "name email")
+    .sort({ paidAt: -1 })
+    .limit(20);
+  res.json({ revenue, recentPayments: recent });
+});
+
+router.get("/agenda/week", async (req, res) => {
+  const startParam = req.query.start;
+  let weekStart;
+  if (startParam) {
+    const [y, m, d] = startParam.split("-").map(Number);
+    weekStart = new Date(y, m - 1, d);
+  } else {
+    const now = new Date();
+    weekStart = new Date(now);
+    const day = weekStart.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    weekStart.setDate(weekStart.getDate() + diff);
+  }
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  const availability = await getOrCreateAvailability();
+  const weeklySlots = {};
+  const slots = availability.weeklySlots;
+  if (slots instanceof Map) {
+    for (const [k, v] of slots.entries()) weeklySlots[k] = v;
+  } else {
+    Object.assign(weeklySlots, slots);
+  }
+
+  const appointments = await Appointment.find({
+    scheduledAt: { $gte: weekStart, $lte: weekEnd },
+    status: { $in: ["solicitada", "confirmada", "completada", "reprogramada"] },
+  })
+    .populate("userId", "name email")
+    .sort({ scheduledAt: 1 });
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const key = parseDateKey(d);
+    const dow = String(d.getDay());
+    days.push({
+      dateKey: key,
+      dayOfWeek: d.getDay(),
+      label: d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" }),
+      slots: weeklySlots[dow] || [],
+      blocked: availability.blockedDates.includes(key),
+    });
+  }
+
+  res.json({
+    weekStart: parseDateKey(weekStart),
+    weekEnd: parseDateKey(weekEnd),
+    days,
+    appointments,
+    slotTimes: [...new Set(Object.values(weeklySlots).flat())].sort(),
   });
 });
 
@@ -145,18 +220,66 @@ router.get("/users", async (req, res) => {
     ];
   }
   const users = await User.find(filter).select("-password").sort({ createdAt: -1 });
-  res.json({ users });
+  const userIds = users.map((u) => u._id);
+  const [profiles, lastApts] = await Promise.all([
+    ChildProfile.find({ userId: { $in: userIds } }),
+    Appointment.aggregate([
+      { $match: { userId: { $in: userIds } } },
+      { $sort: { scheduledAt: -1 } },
+      {
+        $group: {
+          _id: "$userId",
+          lastAt: { $first: "$scheduledAt" },
+          lastStatus: { $first: "$status" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+  const profileMap = Object.fromEntries(profiles.map((p) => [p.userId.toString(), p]));
+  const aptMap = Object.fromEntries(lastApts.map((a) => [a._id.toString(), a]));
+
+  const enriched = users.map((u) => {
+    const prof = profileMap[u._id.toString()];
+    const apt = aptMap[u._id.toString()];
+    const inactiveDays = apt ? daysSince(apt.lastAt) : daysSince(u.createdAt);
+    const atRisk = inactiveDays !== null && inactiveDays >= 21;
+    const planKey = u.activePlan && u.activePlan !== "none" ? u.activePlan : u.sessionCredits > 0 ? "pack4" : "none";
+    return {
+      ...u.toObject(),
+      childName: prof?.childName || "",
+      childAge: childAgeLabel(prof?.birthDate),
+      planLabel: planLabels[planKey] || planLabels.none,
+      lastSessionAt: apt?.lastAt || null,
+      sessionCount: apt?.count || 0,
+      inactiveDays,
+      atRisk,
+    };
+  });
+  res.json({ users: enriched });
 });
 
 router.get("/users/:id", async (req, res) => {
   const user = await User.findById(req.params.id).select("-password");
   if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
-  const [profile, appointments, notes] = await Promise.all([
+  const [profile, appointments, notes, payments] = await Promise.all([
     ChildProfile.findOne({ userId: user._id }),
     Appointment.find({ userId: user._id }).sort({ scheduledAt: -1 }),
     SessionNote.find({ userId: user._id }).sort({ createdAt: -1 }),
+    Payment.find({ userId: user._id, status: "completed" }).sort({ paidAt: -1 }),
   ]);
-  res.json({ user, profile, appointments, notes });
+  const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+  const planKey = user.activePlan && user.activePlan !== "none" ? user.activePlan : user.sessionCredits > 0 ? "pack4" : "none";
+  res.json({
+    user,
+    profile,
+    appointments,
+    notes,
+    payments,
+    totalPaid,
+    planLabel: planLabels[planKey] || planLabels.none,
+    childAge: childAgeLabel(profile?.birthDate),
+  });
 });
 
 router.patch("/users/:id", async (req, res) => {

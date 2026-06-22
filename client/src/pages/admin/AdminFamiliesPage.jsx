@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { PageHeader } from "../../components/AppShell";
-import { formatDateTime } from "../../components/Layout";
+import { formatRelativeDays } from "../../utils/format";
 
 export default function AdminFamiliesPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [q, setQ] = useState("");
-  const [selected, setSelected] = useState(null);
-  const [detail, setDetail] = useState(null);
 
   const load = () => api.adminUsers(q).then((d) => setUsers(d.users));
 
@@ -18,90 +18,57 @@ export default function AdminFamiliesPage() {
     load();
   };
 
-  const openUser = async (id) => {
-    setSelected(id);
-    const d = await api.adminUser(id);
-    setDetail(d);
-  };
-
-  const toggleActive = async () => {
-    await api.adminUpdateUser(selected, { isActive: !detail.user.isActive });
-    openUser(selected);
-    load();
-  };
-
-  const saveAdminNotes = async () => {
-    await api.adminUpdateUser(selected, { adminNotes: detail.user.adminNotes });
-    alert("Notas guardadas");
-  };
-
   return (
     <div className="scr">
-      <PageHeader
-        eyebrow="Comunidad"
-        title="Familias"
-      />
+      <PageHeader eyebrow="CRM" title="Familias" />
+
       <div className="panel">
-        <form onSubmit={search} className="actions">
-          <input placeholder="Buscar por nombre o email" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+        <form onSubmit={search} className="actions" style={{ marginBottom: 16 }}>
+          <input
+            placeholder="Buscar por nombre o email"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            style={{ flex: 1, minWidth: 200 }}
+          />
           <button type="submit" className="btn btn-ghost btn-sm">Buscar</button>
         </form>
-        <div className="table-wrap" style={{ marginTop: 16 }}>
-          <table>
-            <thead>
-              <tr><th>Nombre</th><th>Email</th><th>Activa</th><th></th></tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u._id}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>{u.isActive ? "Sí" : "No"}</td>
-                  <td><button type="button" className="btn btn-ghost btn-sm" onClick={() => openUser(u._id)}>Ver</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      {detail && (
-        <div className="panel">
-          <h3>{detail.user.name}</h3>
-          <p>{detail.user.email} · {detail.user.phone}</p>
-          <div className="actions" style={{ marginTop: 12 }}>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={toggleActive}>
-              {detail.user.isActive ? "Desactivar cuenta" : "Activar cuenta"}
-            </button>
-          </div>
-
-          {detail.profile && (
-            <>
-              <h4 style={{ marginTop: 20 }}>Perfil del niño/a</h4>
-              <p>Nombre: {detail.profile.childName || "—"}</p>
-              <p>Intereses: {detail.profile.interestAreas?.join(", ") || "—"}</p>
-              <p>Preocupaciones: {detail.profile.concerns?.join("; ") || "—"}</p>
-              <p>Meta primera sesión: {detail.profile.firstSessionGoal || "—"}</p>
-            </>
-          )}
-
-          <h4 style={{ marginTop: 20 }}>Notas internas (solo admin)</h4>
-          <textarea
-            className="field-input"
-            value={detail.user.adminNotes || ""}
-            onChange={(e) => setDetail({ ...detail, user: { ...detail.user, adminNotes: e.target.value } })}
-          />
-          <button type="button" className="btn btn-primary btn-sm" style={{ marginTop: 8 }} onClick={saveAdminNotes}>Guardar notas</button>
-
-          <h4 style={{ marginTop: 20 }}>Historial de citas</h4>
-          <ul>
-            {detail.appointments?.map((a) => (
-              <li key={a._id}>{formatDateTime(a.scheduledAt)} — {a.serviceType} ({a.status})</li>
+        {users.length === 0 ? (
+          <p className="empty">No hay familias registradas.</p>
+        ) : (
+          <div className="crm-table">
+            <div className="crm-table-head">
+              <span>Familia</span>
+              <span>Niño/a</span>
+              <span>Plan</span>
+              <span>Última sesión</span>
+              <span />
+            </div>
+            {users.map((u) => (
+              <button
+                key={u._id}
+                type="button"
+                className="crm-table-row"
+                onClick={() => navigate(`/admin/familias/${u._id}`)}
+              >
+                <span className="crm-family">
+                  <span className="crm-avatar" />
+                  <b>{u.name?.split(" ").pop() || u.name}</b>
+                  {u.atRisk && <span className="crm-badge risk">⚠ riesgo</span>}
+                </span>
+                <span>{u.childName ? `${u.childName}${u.childAge ? ` · ${u.childAge}` : ""}` : "—"}</span>
+                <span>
+                  <span className={`crm-plan-pill${u.planLabel === "Sin plan" ? "" : " active"}`}>{u.planLabel}</span>
+                </span>
+                <span style={{ color: u.atRisk ? "var(--clay)" : "var(--muted)" }}>
+                  {formatRelativeDays(u.inactiveDays)}
+                </span>
+                <span className="crm-arrow">→</span>
+              </button>
             ))}
-          </ul>
-          <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 16 }} onClick={() => { setSelected(null); setDetail(null); }}>Cerrar</button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

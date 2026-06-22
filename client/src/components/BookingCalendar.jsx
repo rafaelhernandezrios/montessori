@@ -33,7 +33,8 @@ export function BookingCalendar({ onSelect, selectedDate, selectedSlot, fetchAva
   const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
   return (
-    <div>
+    <div className={loading ? "cal-loading" : ""}>
+      {loading && <p className="cal-loading-msg">Cargando fechas disponibles…</p>}
       <div className="cal">
         <div className="cal-top">
           <h3>{monthNames[month - 1]} {year}</h3>
@@ -67,7 +68,7 @@ export function BookingCalendar({ onSelect, selectedDate, selectedSlot, fetchAva
                 key={d}
                 type="button"
                 className={`day${isSel ? " sel" : ""}${isToday ? " today" : ""}`}
-                disabled={!hasSlots || loading}
+                disabled={loading || !hasSlots}
                 onClick={() => onSelect({ date, dateKey: key, slot: null })}
               >
                 {d}

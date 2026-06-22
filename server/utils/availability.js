@@ -39,8 +39,12 @@ export async function getBookedSlotsForMonth(year, month) {
   return booked;
 }
 
-export async function getAvailableSlotsForDate(dateKey) {
-  const availability = await getOrCreateAvailability();
+function getWeeklyDaySlots(weeklySlots, dayOfWeek) {
+  const dayKey = String(dayOfWeek);
+  return (typeof weeklySlots.get === "function" ? weeklySlots.get(dayKey) : weeklySlots[dayKey]) || [];
+}
+
+function slotsForDateKey(dateKey, availability, booked) {
   if (availability.blockedDates.includes(dateKey)) return [];
 
   const [y, m, d] = dateKey.split("-").map(Number);
@@ -52,13 +56,32 @@ export async function getAvailableSlotsForDate(dateKey) {
   today.setHours(0, 0, 0, 0);
   if (date < today) return [];
 
-  const weeklySlots = availability.weeklySlots;
-  const dayKey = String(dayOfWeek);
-  const daySlots =
-    (typeof weeklySlots.get === "function" ? weeklySlots.get(dayKey) : weeklySlots[dayKey]) || [];
-  const booked = await getBookedSlotsForMonth(y, m);
+  const daySlots = getWeeklyDaySlots(availability.weeklySlots, dayOfWeek);
   const taken = booked[dateKey] || [];
   return daySlots.filter((slot) => !taken.includes(slot));
+}
+
+/** Una sola lectura de agenda + citas del mes (evita N consultas por día). */
+export async function getAvailableDaysForMonth(year, month) {
+  const availability = await getOrCreateAvailability();
+  const booked = await getBookedSlotsForMonth(year, month);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const availableDays = {};
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const slots = slotsForDateKey(dateKey, availability, booked);
+    if (slots.length) availableDays[dateKey] = slots;
+  }
+
+  return { availableDays, booked, blockedDates: availability.blockedDates };
+}
+
+export async function getAvailableSlotsForDate(dateKey) {
+  const availability = await getOrCreateAvailability();
+  const [y, m] = dateKey.split("-").map(Number);
+  const booked = await getBookedSlotsForMonth(y, m);
+  return slotsForDateKey(dateKey, availability, booked);
 }
 
 export function formatAppointmentDate(date) {

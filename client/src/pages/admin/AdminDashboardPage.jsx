@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { PageHeader } from "../../components/AppShell";
+import { formatMxn } from "../../utils/format";
 
 const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -9,6 +10,7 @@ const months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [atRisk, setAtRisk] = useState([]);
   const now = new Date();
   const dateLabel = `${weekdays[now.getDay()]} · ${now.getDate()} de ${months[now.getMonth()]}`;
 
@@ -16,8 +18,10 @@ export default function AdminDashboardPage() {
     Promise.all([
       api.adminStats(),
       api.adminAppointments(),
-    ]).then(([s, a]) => {
+      api.adminUsers(),
+    ]).then(([s, a, u]) => {
       setStats(s.stats);
+      setAtRisk((u.users || []).filter((x) => x.atRisk).slice(0, 3));
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -50,6 +54,15 @@ export default function AdminDashboardPage() {
       )}
 
       <div className="stat-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))" }}>
+        <Link to="/admin/ingresos" className="metric-card" style={{ textDecoration: "none", color: "inherit" }}>
+          <div className="metric-card-label">Ingresos del mes</div>
+          <b>{formatMxn(stats.monthRevenue || 0)}</b>
+          {stats.monthGrowth ? (
+            <div className="metric-card-hint" style={{ color: stats.monthGrowth > 0 ? "var(--sage)" : "var(--clay)" }}>
+              {stats.monthGrowth > 0 ? "▲" : "▼"} {Math.abs(stats.monthGrowth)}%
+            </div>
+          ) : null}
+        </Link>
         <div className="metric-card">
           <div className="metric-card-label">Solicitudes pendientes</div>
           <b>{stats.pending}</b>
@@ -88,7 +101,7 @@ export default function AdminDashboardPage() {
                     <div style={{ fontWeight: 600 }}>{a.userId?.name || "Familia"}</div>
                     <div style={{ fontSize: ".84rem", color: "var(--muted)" }}>{a.serviceType}</div>
                   </div>
-                  <Link to="/admin/citas" className="btn btn-primary btn-sm">Gestionar</Link>
+                  <Link to={`/admin/familias/${a.userId?._id || ""}`} className="btn btn-primary btn-sm">Ver familia</Link>
                 </div>
               );
             })
@@ -96,18 +109,21 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="panel" style={{ marginBottom: 0 }}>
-          <h3 style={{ marginBottom: "1rem" }}>Áreas más solicitadas</h3>
-          {stats.topServices?.length > 0 ? (
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
-              {stats.topServices.map((s) => (
-                <li key={s._id} style={{ display: "flex", justifyContent: "space-between", fontSize: ".9rem", paddingBottom: 8, borderBottom: "1px solid var(--line)" }}>
-                  <span>{s._id}</span>
-                  <b style={{ color: "var(--sage-deep)" }}>{s.count}</b>
-                </li>
-              ))}
-            </ul>
+          <h3 style={{ marginBottom: "1rem" }}>Necesitan atención</h3>
+          {atRisk.length === 0 ? (
+            <p className="empty" style={{ padding: "12px 0" }}>Todas las familias activas recientemente.</p>
           ) : (
-            <p className="empty" style={{ padding: "12px 0" }}>Sin datos aún.</p>
+            atRisk.map((f) => (
+              <Link key={f._id} to={`/admin/familias/${f._id}`} className="attention-row">
+                <span className="attention-dot" />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: ".9rem" }}>{f.name}</div>
+                  <div style={{ fontSize: ".82rem", color: "var(--muted)" }}>
+                    Sin actividad {f.inactiveDays} días
+                  </div>
+                </div>
+              </Link>
+            ))
           )}
         </div>
       </div>
