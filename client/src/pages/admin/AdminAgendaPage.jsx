@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
+import { PageHeader } from "../../components/AppShell";
 import { slotTimes } from "../../../../shared/content.js";
 
 const DAYS = [
@@ -46,10 +47,13 @@ export default function AdminAgendaPage() {
   };
 
   return (
-    <div>
+    <div className="scr">
+      <PageHeader
+        eyebrow="Disponibilidad"
+        title="Gestión de agenda"
+      />
       <div className="panel">
-        <h2>Gestión de agenda</h2>
-        <p style={{ color: "var(--muted)" }}>Configura horarios por día y bloquea fechas de vacaciones.</p>
+        <p className="panel-muted">Configura horarios por día y bloquea fechas de vacaciones.</p>
         {msg && <div className="alert alert-success">{msg}</div>}
 
         {DAYS.map(({ key, label }) => (

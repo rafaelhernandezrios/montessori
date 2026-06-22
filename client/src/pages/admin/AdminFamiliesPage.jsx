@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
+import { PageHeader } from "../../components/AppShell";
 import { formatDateTime } from "../../components/Layout";
 
 export default function AdminFamiliesPage() {
@@ -35,9 +36,12 @@ export default function AdminFamiliesPage() {
   };
 
   return (
-    <div>
+    <div className="scr">
+      <PageHeader
+        eyebrow="Comunidad"
+        title="Familias"
+      />
       <div className="panel">
-        <h2>Familias</h2>
         <form onSubmit={search} className="actions">
           <input placeholder="Buscar por nombre o email" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
           <button type="submit" className="btn btn-ghost btn-sm">Buscar</button>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
+import { PageHeader } from "../../components/AppShell";
 import { StatusBadge, formatDateTime } from "../../components/Layout";
 
 export default function AppointmentsPage() {
@@ -24,17 +25,19 @@ export default function AppointmentsPage() {
   };
 
   return (
-    <div>
+    <div className="scr">
+      <PageHeader
+        eyebrow="Calendario familiar"
+        title="Mis citas"
+        action={<Link to="/citas/nueva" className="btn btn-primary btn-sm">+ Nueva reserva</Link>}
+      />
+
       <div className="panel">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <h2>Mis citas</h2>
-          <Link to="/citas/nueva" className="btn btn-primary btn-sm">Nueva reserva</Link>
-        </div>
         {error && <div className="alert alert-error">{error}</div>}
         {appointments.length === 0 ? (
           <p className="empty">Aún no tienes citas. <Link to="/citas/nueva">Reserva tu primera sesión</Link></p>
         ) : (
-          <div className="table-wrap" style={{ marginTop: 16 }}>
+          <div className="table-wrap">
             <table>
               <thead>
                 <tr>

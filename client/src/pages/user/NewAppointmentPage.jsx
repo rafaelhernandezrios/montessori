@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookingCalendar } from "../../components/BookingCalendar";
+import { PageHeader } from "../../components/AppShell";
 import { api } from "../../api/client";
 import { serviceTypes } from "../../../../shared/content.js";
 
@@ -43,10 +44,14 @@ export default function NewAppointmentPage() {
   };
 
   return (
-    <div>
+    <div className="scr">
+      <PageHeader
+        eyebrow="Sesión en línea"
+        title="Reservar asesoría"
+      />
+
       <div className="panel">
-        <h2>Reservar asesoría</h2>
-        <p style={{ color: "var(--muted)" }}>Sesiones individuales en línea, adaptadas a tu zona horaria.</p>
+        <p className="panel-muted">Sesiones individuales en línea, adaptadas a tu zona horaria.</p>
         <span className="modality">Sesión en línea</span>
         {msg && <div className="alert alert-success">{msg}</div>}
         {error && <div className="alert alert-error">{error}</div>}

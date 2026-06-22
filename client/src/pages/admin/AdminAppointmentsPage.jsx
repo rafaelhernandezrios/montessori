@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
+import { PageHeader } from "../../components/AppShell";
 import { StatusBadge, formatDateTime } from "../../components/Layout";
 
 export default function AdminAppointmentsPage() {
@@ -48,9 +49,12 @@ export default function AdminAppointmentsPage() {
   };
 
   return (
-    <div>
+    <div className="scr">
+      <PageHeader
+        eyebrow="Administración"
+        title="Gestión de citas"
+      />
       <div className="panel">
-        <h2>Gestión de citas</h2>
         <div className="actions">
           <Link to="/admin/citas" className={`btn btn-ghost btn-sm${!status ? " btn-primary" : ""}`}>Todas</Link>
           <Link to="/admin/citas?status=solicitada" className="btn btn-ghost btn-sm">Solicitadas</Link>

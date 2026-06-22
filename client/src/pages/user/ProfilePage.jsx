@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
+import { PageHeader } from "../../components/AppShell";
 import { quotes, services } from "../../../../shared/content.js";
 
 export default function ProfilePage() {
@@ -65,15 +66,40 @@ export default function ProfilePage() {
     }
   };
 
+  const firstName = account.name?.split(" ")[0] || "familia";
+
   return (
-    <div>
+    <div className="scr">
+      <PageHeader
+        eyebrow="Tu espacio familiar"
+        title="Perfil familiar"
+      />
+
+      <div className="profile-hero">
+        <div className="welcome-icon" style={{ margin: 0, flexShrink: 0 }}>🌱</div>
+        <div>
+          <div className="page-eyebrow" style={{ color: "var(--sage-deep)" }}>Hola, {firstName}</div>
+          <h2 style={{ fontFamily: "var(--display)", fontSize: "1.5rem", marginBottom: 6 }}>
+            {form.childName ? `Acompañando a ${form.childName}` : "Cuéntanos sobre tu peque"}
+          </h2>
+          <p className="panel-muted" style={{ margin: 0 }}>
+            Esta información ayuda a Adriana a preparar cada sesión con calidez y precisión.
+          </p>
+          {form.interestAreas.length > 0 && (
+            <div className="profile-tags">
+              {form.interestAreas.map((t) => (
+                <span key={t} className="tag-pill selected" style={{ cursor: "default", fontSize: ".78rem" }}>{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="panel">
-        <h2>Perfil familiar</h2>
-        <p style={{ color: "var(--muted)" }}>Esta información ayuda a Adriana a preparar cada sesión.</p>
         {msg && <div className="alert alert-success">{msg}</div>}
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSave}>
-          <h3 style={{ marginTop: 20 }}>Tu cuenta</h3>
+          <h3 style={{ marginTop: 0 }}>Tu cuenta</h3>
           <div className="field">
             <label>Nombre</label>
             <input value={account.name} onChange={(e) => setAccount({ ...account, name: e.target.value })} />
@@ -108,12 +134,16 @@ export default function ProfilePage() {
           )}
 
           <h4 style={{ marginTop: 20, marginBottom: 8 }}>Áreas de interés</h4>
-          <div className="check-grid">
+          <div className="tag-row">
             {services.map((s) => (
-              <label key={s.t} className="check-item">
-                <input type="checkbox" checked={form.interestAreas.includes(s.t)} onChange={() => toggleArray("interestAreas", s.t)} />
+              <button
+                key={s.t}
+                type="button"
+                className={`tag-pill${form.interestAreas.includes(s.t) ? " selected" : ""}`}
+                onClick={() => toggleArray("interestAreas", s.t)}
+              >
                 {s.t}
-              </label>
+              </button>
             ))}
           </div>
 
