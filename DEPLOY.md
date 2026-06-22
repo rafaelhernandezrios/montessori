@@ -1,117 +1,88 @@
-# Despliegue — Vercel (frontend) + Railway/Render (API)
+# Despliegue en Vercel (frontend + API)
+
+Todo el proyecto se despliega en **un solo proyecto de Vercel**: React estático + API Express serverless.
 
 ## Arquitectura
 
-| Componente | Dónde | Qué hace |
-|------------|-------|----------|
-| `client/` | **Vercel** | React (landing + dashboards) |
-| `server/` | **Railway** o **Render** | Express API + MongoDB Atlas |
-
-MongoDB Atlas es obligatorio en producción (no uses `localhost`).
-
----
-
-## 1. Subir a GitHub
-
-```bash
-cd "/Users/rafael/Adriana Villalobos"
-git init
-git add .
-git commit -m "Plataforma Montessori en Casa — MVP"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
-git push -u origin main
+```
+Vercel
+├── client/dist     → sitio React (landing + dashboards)
+└── api/index.js    → Express API (/api/*) + MongoDB Atlas
 ```
 
-> `.env` no se sube (está en `.gitignore`). Configura variables en cada plataforma.
+No necesitas Railway ni Render.
 
 ---
 
-## 2. MongoDB Atlas (producción)
+## 1. MongoDB Atlas
 
 1. Crea cluster gratis en [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
 2. Database Access → usuario + contraseña
-3. Network Access → `0.0.0.0/0` (o IP de Railway)
-4. Copia connection string:
+3. Network Access → `0.0.0.0/0` (permite conexiones desde Vercel)
+4. Connection string:
    ```
    mongodb+srv://usuario:password@cluster.mongodb.net/montessori?retryWrites=true&w=majority
    ```
 
 ---
 
-## 3. API en Railway (recomendado)
+## 2. Sembrar admin (una vez, desde tu Mac)
 
-1. [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Selecciona el repo
-3. **Root Directory:** `server` (o usa monorepo con start command abajo)
-4. **Variables de entorno:**
+Con la URI de Atlas en `.env`:
+
+```bash
+npm run seed
+```
+
+Crea el usuario admin y la disponibilidad inicial.
+
+---
+
+## 3. Proyecto en Vercel
+
+1. [vercel.com](https://vercel.com) → **Add New Project** → importa `rafaelhernandezrios/montessori`
+2. **Root Directory:** `.` (raíz del repo, no `client`)
+3. Vercel detectará `vercel.json` automáticamente
+4. **Environment Variables** (Production + Preview):
 
 | Variable | Valor |
 |----------|-------|
-| `MONGO_URI` | tu URI de Atlas |
+| `MONGO_URI` | URI de MongoDB Atlas |
 | `JWT_SECRET` | string largo aleatorio |
-| `PORT` | `5001` (Railway asigna puerto automático — usa `PORT` del env de Railway) |
-| `CORS_ORIGINS` | `https://tu-app.vercel.app` |
-| `FRONTEND_URL` | `https://tu-app.vercel.app` |
-| `ADMIN_EMAIL` | email admin |
+| `ADMIN_EMAIL` | email del admin |
 | `ADMIN_PASSWORD` | contraseña segura |
 | `ADMIN_NAME` | Adriana Villalobos |
+| `FRONTEND_URL` | `https://tu-dominio.vercel.app` (opcional; Vercel usa `VERCEL_URL` automáticamente) |
+| `CORS_ORIGINS` | `https://tu-dominio.vercel.app` (opcional si usas dominio propio) |
 
-5. **Start command** (si root es monorepo):
-   ```
-   npm install && npm run start -w server
-   ```
-6. Tras deploy, corre seed una vez (Railway shell o local con MONGO_URI de prod):
-   ```bash
-   npm run seed -w server
-   ```
-7. Copia la URL pública del API, ej: `https://montessori-api.up.railway.app`
+> **No necesitas `VITE_API_URL`** en Vercel: frontend y API comparten el mismo dominio (`/api`).
+
+5. **Deploy**
 
 ---
 
-## 4. Frontend en Vercel
+## 4. Verificación
 
-1. [vercel.com](https://vercel.com) → Add New Project → importa el repo de GitHub
-2. Configuración:
-
-| Campo | Valor |
-|-------|-------|
-| **Root Directory** | `client` |
-| **Framework Preset** | Vite |
-| **Build Command** | `npm run build` |
-| **Output Directory** | `dist` |
-| **Install Command** | `cd .. && npm install` |
-
-3. **Environment Variables:**
-
-| Variable | Valor |
-|----------|-------|
-| `VITE_API_URL` | `https://montessori-api.up.railway.app` (sin `/api` al final) |
-
-4. Deploy → tu sitio estará en `https://tu-app.vercel.app`
-
-5. Actualiza `CORS_ORIGINS` en Railway con la URL real de Vercel.
+- `https://tu-app.vercel.app/api/health` → `{"ok":true,"db":"connected","env":"vercel"}`
+- Registro y login en la web
+- Admin: `ADMIN_EMAIL` / `ADMIN_PASSWORD`
 
 ---
 
-## 5. Verificación post-deploy
+## 5. Desarrollo local
 
-- `https://tu-api.../api/health` → `{"ok":true,"db":"connected"}`
-- Abre la web → registro / login funcionan
-- Admin: credenciales de `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+```bash
+npm install
+npm run dev
+```
 
----
-
-## Alternativa: Render para API
-
-1. [render.com](https://render.com) → Web Service → conecta GitHub
-2. Root: `server`, Build: `npm install`, Start: `node index.js`
-3. Mismas variables de entorno que Railway
+- Frontend: http://localhost:5173 (proxy `/api` → :5001)
+- API: http://localhost:5001/api/health
 
 ---
 
 ## Notas
 
-- **Stripe (fase 2):** agrega `STRIPE_*` en Railway y webhook URL apuntando al API.
-- **Dominio propio:** en Vercel añade dominio; actualiza `CORS_ORIGINS` y `FRONTEND_URL`.
-- El archivo `client/vercel.json` ya incluye rewrites para React Router (SPA).
+- **Dominio propio:** agrégalo en Vercel → Settings → Domains; actualiza `FRONTEND_URL` y `CORS_ORIGINS`.
+- **Stripe (fase 2):** webhook URL = `https://tu-dominio.vercel.app/api/stripe/webhook`
+- **Límites serverless:** funciones hasta 30s (`maxDuration` en `vercel.json`). Plan Hobby = 10s en algunas regiones; si hay timeouts con MongoDB frío, considera plan Pro o mantener conexión Atlas en región cercana.

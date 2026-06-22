@@ -88,14 +88,14 @@ npm start
 | `/perfil` | Perfil del niño/a |
 | `/admin` | Panel Adriana |
 
-## Producción (Vercel + Railway)
+## Producción (Vercel — todo en uno)
 
 Guía completa en **[DEPLOY.md](DEPLOY.md)**.
 
-Resumen:
-- **Vercel** → carpeta `client`, variable `VITE_API_URL`
-- **Railway/Render** → carpeta `server`, `MONGO_URI` (Atlas), `CORS_ORIGINS`
-- **GitHub** → `git init`, commit, push, conectar ambos servicios
+- **Un solo proyecto Vercel** en la raíz del repo (no solo `client/`)
+- API Express en `api/index.js` → rutas `/api/*`
+- MongoDB Atlas obligatorio en producción
+- `npm run seed` una vez antes o después del primer deploy
 
 ## Fase 2 — Stripe
 

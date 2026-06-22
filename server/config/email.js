@@ -55,9 +55,13 @@ export const sendAppointmentConfirmedEmail = (email, name, date, meetingLink) =>
     html: `<h2>Hola ${name}</h2><p>Tu sesión del <b>${date}</b> está confirmada.${meetingLink ? `<br><a href="${meetingLink}">Unirse a la videollamada</a>` : ""}</p>`,
   });
 
-export const sendSessionNotePublishedEmail = (email, name) =>
-  sendEmail({
+export const sendSessionNotePublishedEmail = (email, name) => {
+  const base =
+    process.env.FRONTEND_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:5173");
+  return sendEmail({
     to: email,
     subject: "Nueva nota de sesión disponible",
-    html: `<h2>Hola ${name}</h2><p>Adriana publicó una nueva nota de sesión. Ingresa a tu panel para leerla.</p><p><a href="${process.env.FRONTEND_URL}/sesiones">Ver mis sesiones</a></p>`,
+    html: `<h2>Hola ${name}</h2><p>Adriana publicó una nueva nota de sesión. Ingresa a tu panel para leerla.</p><p><a href="${base}/sesiones">Ver mis sesiones</a></p>`,
   });
+};

@@ -1,35 +1,44 @@
 import mongoose from "mongoose";
 
+const globalCache = globalThis;
+
+if (!globalCache._mongooseCache) {
+  globalCache._mongooseCache = { conn: null, promise: null };
+}
+
+const cache = globalCache._mongooseCache;
+
 const connectDB = async () => {
   const uri = process.env.MONGO_URI;
   if (!uri) {
-    console.error("❌ MONGO_URI no está definido en .env");
-    process.exit(1);
+    throw new Error("MONGO_URI no está definido");
+  }
+
+  if (cache.conn) {
+    return cache.conn;
+  }
+
+  if (!cache.promise) {
+    cache.promise = mongoose
+      .connect(uri, {
+        serverSelectionTimeoutMS: 10000,
+        bufferCommands: false,
+      })
+      .then((m) => {
+        console.log("✅ MongoDB conectado");
+        return m;
+      });
   }
 
   try {
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 10000,
-    });
-    console.log("✅ MongoDB conectado");
-    return mongoose.connection;
+    cache.conn = await cache.promise;
   } catch (error) {
-    console.error("\n❌ No se pudo conectar a MongoDB\n");
-    if (uri.includes("localhost") || uri.includes("127.0.0.1")) {
-      console.error("Tu MONGO_URI apunta a localhost pero MongoDB no está corriendo.");
-      console.error("Opciones:");
-      console.error("  1. Inicia MongoDB local: brew install mongodb-community && brew services start mongodb-community");
-      console.error("  2. Usa MongoDB Atlas (gratis): https://www.mongodb.com/cloud/atlas");
-      console.error("     MONGO_URI=mongodb+srv://usuario:password@cluster.mongodb.net/montessori\n");
-    } else {
-      console.error("Revisa tu URI de Atlas:");
-      console.error("  - Usuario y contraseña correctos");
-      console.error("  - IP permitida en Network Access (0.0.0.0/0 para desarrollo)");
-      console.error("  - Nombre de base de datos en la URI\n");
-    }
-    console.error(error.message);
-    process.exit(1);
+    cache.promise = null;
+    console.error("❌ No se pudo conectar a MongoDB:", error.message);
+    throw error;
   }
+
+  return cache.conn;
 };
 
 export default connectDB;
