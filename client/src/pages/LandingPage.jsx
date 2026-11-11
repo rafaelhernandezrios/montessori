@@ -464,6 +464,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section id="cuestionario" className="survey-band">
+        <div className="wrap survey-band-inner">
+          <div>
+            <span className="eyebrow">Te quiero conocer</span>
+            <h2>¿Tienes un hijo de 0 a 3 años? Responde y recibe un regalo 🎁</h2>
+            <p>Estoy preparando un acompañamiento para familias como la tuya. Cuéntame qué necesitas y qué te cuesta: toma unos 10 minutos y no necesitas saber de Montessori.</p>
+          </div>
+          <Link to="/cuestionario" className="btn btn-clay">Responder el cuestionario</Link>
+        </div>
+      </section>
+
       <section id="escuela" className="school">
         <div className="wrap">
           <span className="eyebrow">Visión a futuro</span>

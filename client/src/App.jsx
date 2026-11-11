@@ -8,6 +8,7 @@ import ComoFuncionaPage from "./pages/ComoFuncionaPage";
 import PrivacidadPage from "./pages/PrivacidadPage";
 import PreciosPage from "./pages/PreciosPage";
 import JourneyPostPage from "./pages/JourneyPostPage";
+import CuestionarioPage from "./pages/CuestionarioPage";
 import UserLayout from "./pages/user/UserLayout";
 import DashboardPage from "./pages/user/DashboardPage";
 import ProfilePage from "./pages/user/ProfilePage";
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/como-funciona" element={<ComoFuncionaPage />} />
           <Route path="/privacidad" element={<PrivacidadPage />} />
           <Route path="/precios" element={<PreciosPage />} />
+          <Route path="/cuestionario" element={<CuestionarioPage />} />
           <Route path="/mi-camino/:slug" element={<JourneyPostPage />} />
 
           <Route path="/" element={<ProtectedRoute><UserLayout /></ProtectedRoute>}>

@@ -91,6 +91,7 @@ export function Footer() {
             <a href="/#asesorias">Asesorías</a>
             <a href="/#mi-camino">Mi camino</a>
             <a href="/#recursos">Recursos</a>
+            <Link to="/cuestionario">Cuestionario para mamás</Link>
             <a href="/#escuela">Escuela en Osaka</a>
             <a href="/como-funciona">Cómo funciona</a>
           </div>

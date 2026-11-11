@@ -1,11 +1,50 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { PageHeader } from "../../components/AppShell";
+import { formatSurveyAnswer, surveyQuestions } from "../../../../shared/survey.js";
 
 const TABS = [
   { id: "guide", label: "Guía gratuita" },
   { id: "school", label: "Escuela en Osaka" },
+  { id: "survey", label: "Cuestionario" },
 ];
+
+function SurveyList({ responses }) {
+  const [open, setOpen] = useState(null);
+  if (responses.length === 0) return <p className="empty">Todavía no hay respuestas.</p>;
+  return (
+    <div className="survey-admin">
+      {responses.map((r) => {
+        const isOpen = open === r._id;
+        const a = r.answers || {};
+        return (
+          <div key={r._id} className={`survey-admin-item${isOpen ? " open" : ""}`}>
+            <button type="button" className="survey-admin-head" onClick={() => setOpen(isOpen ? null : r._id)}>
+              <span>{formatDate(r.updatedAt || r.createdAt)}</span>
+              <b>{r.email}</b>
+              <span>{a.childAge || "—"}</span>
+              <span className="survey-admin-toggle">{isOpen ? "Ocultar" : "Ver respuestas"}</span>
+            </button>
+            {isOpen && (
+              <dl className="survey-admin-body">
+                {surveyQuestions.map((q) => {
+                  const text = formatSurveyAnswer(q, a);
+                  if (!text) return null;
+                  return (
+                    <div key={q.id}>
+                      <dt>{q.n ? `${q.n}. ` : ""}{q.label}</dt>
+                      <dd>{q.id === "email" ? <a href={`mailto:${text}`}>{text}</a> : text}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
@@ -19,7 +58,8 @@ export default function AdminLeadsPage() {
   useEffect(() => {
     setLeads(null);
     setError("");
-    api.adminLeads(type).then((d) => setLeads(d.leads)).catch((e) => setError(e.message));
+    const load = type === "survey" ? api.adminSurvey().then((d) => d.responses) : api.adminLeads(type).then((d) => d.leads);
+    load.then(setLeads).catch((e) => setError(e.message));
   }, [type]);
 
   return (
@@ -35,8 +75,9 @@ export default function AdminLeadsPage() {
       {error && <div className="alert alert-error">{error}</div>}
       <div className="panel">
         {!leads && !error && <p className="panel-muted">Cargando…</p>}
-        {leads && leads.length === 0 && <p className="empty">Todavía no hay registros.</p>}
-        {leads && leads.length > 0 && (
+        {leads && type === "survey" && <SurveyList responses={leads} />}
+        {leads && type !== "survey" && leads.length === 0 && <p className="empty">Todavía no hay registros.</p>}
+        {leads && type !== "survey" && leads.length > 0 && (
           <div className="table-wrap">
             <table>
               <thead>

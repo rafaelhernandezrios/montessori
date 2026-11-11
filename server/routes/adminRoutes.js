@@ -6,6 +6,7 @@ import SessionNote from "../models/SessionNote.js";
 import User from "../models/User.js";
 import Payment from "../models/Payment.js";
 import Lead from "../models/Lead.js";
+import SurveyResponse from "../models/SurveyResponse.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { adminMiddleware } from "../middleware/adminMiddleware.js";
 import {
@@ -467,6 +468,11 @@ router.get("/leads", async (req, res) => {
   const filter = req.query.type ? { type: req.query.type } : {};
   const leads = await Lead.find(filter).sort({ createdAt: -1 }).limit(500);
   res.json({ leads });
+});
+
+router.get("/survey", async (_req, res) => {
+  const responses = await SurveyResponse.find().sort({ createdAt: -1 }).limit(500);
+  res.json({ responses });
 });
 
 export default router;
